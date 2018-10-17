@@ -1,3 +1,92 @@
 <!doctype html>
 <html>
+<head>
+	<style type="text/css">
+		.wrapper {
+			position: relative;
+		}
+
+		.canvas {
+			position: absolute;
+			left: 0;
+			top: 0;
+		}
+	</style>
+</head>
+<body>
+	<video id="video" hidden></video>
+	<div class="wrapper">
+		<canvas id="canvas" class="canvas" width="800" height="600"></canvas>
+		<canvas id="overlay" class="canvas" width="800" height="600"></canvas>
+	</div>
+	<script>
+		(async () => {
+			const canvas = document.getElementById('canvas');
+			const overlay = document.getElementById('overlay');
+			const video = document.getElementById('video');
+			if (!'FaceDetector' in window) return alert('FaceDetector not supported');
+			const faceDetector = new FaceDetector({fastMode: false, maxDetectedFace: 2});
+
+
+			let faces = [];
+			const detect = async () => {
+				const detectedFaces = await faceDetector.detect(canvas);
+				faces = detectedFaces;
+				detect();
+			};
+			detect();
+
+			const context = canvas.getContext('2d');
+			const overlayContext = overlay.getContext('2d');
+			const update = () => {
+				context.drawImage(video, 0, 0, 800, 600);
+				overlayContext.clearRect(0, 0, 800, 600);
+
+				for (let i = faces.length - 1; i >= 0; i--) {
+					const face = faces[i];
+					const {boundingBox} = face;
+					const {x, y, width, height} = boundingBox;
+					overlayContext.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+					overlayContext.strokeRect(x, y, width, height);
+
+					const {landmarks} = face;
+					for (let l = landmarks.length - 1; l >= 0; l--) {
+						const landmark =  landmarks[l];
+						const {locations, type} = landmark;
+
+						switch (type) {
+							case 'eye':
+								overlayContext.strokeStyle = 'rgba(255, 128, 128, 0.7)';
+								break;
+							case 'mouth':
+								overlayContext.strokeStyle = 'rgba(128, 128, 255, 0.7)';
+								break;
+							case 'nose':
+								overlayContext.strokeStyle = 'rgba(128, 255, 128, 0.7)';
+								break;
+							default:
+								overlayContext.strokeStyle = 'red';
+						}
+
+						for (let k = locations.length - 1; k >= 0; k--) {
+							const location = locations[k];
+							const {x, y} = location;
+							overlayContext.strokeRect(x, y, 5, 5);
+						}
+					}
+				};
+
+				requestAnimationFrame(update);
+			};
+			update();
+
+			navigator.getUserMedia({video: true, audio: true}, stream => {
+				video.srcObject = stream;
+				video.play();
+			}, error => {
+				console.log(error);
+			});
+		})();
+	</script>
+</body>
 </html>
