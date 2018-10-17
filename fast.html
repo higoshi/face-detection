@@ -25,7 +25,7 @@
 			const overlay = document.getElementById('overlay');
 			const video = document.getElementById('video');
 			if (!'FaceDetector' in window) return alert('FaceDetector not supported');
-			const faceDetector = new FaceDetector({fastMode: false, maxDetectedFace: 5});
+			const faceDetector = new FaceDetector({fastMode: true, maxDetectedFace: 5});
 
 			let faces = [];
 			const detect = async () => {
