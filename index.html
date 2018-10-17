@@ -16,8 +16,8 @@
 <body>
 	<video id="video" hidden></video>
 	<div class="wrapper">
-		<canvas id="canvas" class="canvas" width="800" height="600"></canvas>
-		<canvas id="overlay" class="canvas" width="800" height="600"></canvas>
+		<canvas id="canvas" class="canvas"></canvas>
+		<canvas id="overlay" class="canvas"></canvas>
 	</div>
 	<script>
 		(async () => {
@@ -39,8 +39,9 @@
 			const context = canvas.getContext('2d');
 			const overlayContext = overlay.getContext('2d');
 			const update = () => {
-				context.drawImage(video, 0, 0, 800, 600);
-				overlayContext.clearRect(0, 0, 800, 600);
+				const {innerWidth: width, innerHeight: height} = window;
+				context.drawImage(video, 0, 0, width, height);
+				overlayContext.clearRect(0, 0, width, height);
 
 				for (let i = faces.length - 1; i >= 0; i--) {
 					const face = faces[i];
@@ -56,23 +57,25 @@
 
 						switch (type) {
 							case 'eye':
-								overlayContext.strokeStyle = 'rgba(255, 128, 128, 0.7)';
-								break;
 							case 'mouth':
-								overlayContext.strokeStyle = 'rgba(128, 128, 255, 0.7)';
-								break;
 							case 'nose':
-								overlayContext.strokeStyle = 'rgba(128, 255, 128, 0.7)';
+								overlayContext.strokeStyle = 'rgba(255, 255, 255, 0.5)';
 								break;
 							default:
 								overlayContext.strokeStyle = 'red';
 						}
 
+						let location = locations[0];
+						let {x, y} = location;
+						overlayContext.beginPath();
+						overlayContext.moveTo(x, y);
 						for (let k = locations.length - 1; k >= 0; k--) {
-							const location = locations[k];
-							const {x, y} = location;
-							overlayContext.strokeRect(x, y, 5, 5);
+							location = locations[k];
+							({x, y} = location);
+
+							overlayContext.lineTo(x, y);
 						}
+						overlayContext.stroke();
 					}
 				};
 
@@ -80,12 +83,20 @@
 			};
 			update();
 
-			navigator.getUserMedia({video: true, audio: true}, stream => {
+
+			navigator.getUserMedia({video: true, audio: false}, stream => {
 				video.srcObject = stream;
 				video.play();
 			}, error => {
 				console.log(error);
 			});
+
+			const resize = () => {
+				const {innerWidth, innerHeight} = window;
+				canvas.width = overlay.width = innerWidth;
+				canvas.height = overlay.height = innerHeight;
+			};
+			resize();
 		})();
 	</script>
 </body>
